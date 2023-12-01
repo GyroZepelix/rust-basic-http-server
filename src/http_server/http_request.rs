@@ -1,3 +1,8 @@
+use crate::create_enum_and_matchers;
+use crate::http_server::helper::split_lines_by_char;
+use crate::http_server::http_version::HttpVersion;
+use crate::http_server::HttpServerError;
+
 #[derive(Debug)]
 pub struct HttpRequest {
     pub request_line: RequestLine,
@@ -8,14 +13,7 @@ pub struct HttpRequest {
 pub struct RequestLine {
     pub method: HttpMethod,
     pub path: String,
-    pub http_version: String
-}
-
-#[derive(Debug)]
-pub enum HttpServerError {
-    InvalidHttpRequestStructure,
-    InvalidRequestLineSyntax,
-    HttpMethodNotFound
+    pub http_version: HttpVersion
 }
 
 const NEWLINE: u8 = 10;
@@ -43,7 +41,7 @@ impl RequestLine {
 
         let method = HttpMethod::from_bytes(request_line_bytes[0]).ok_or(HttpServerError::HttpMethodNotFound)?;
         let path = String::from_utf8_lossy(request_line_bytes[1]).to_string();
-        let http_version = String::from_utf8_lossy(request_line_bytes[2]).to_string();
+        let http_version = HttpVersion::from_bytes(request_line_bytes[2])?;
 
         Ok(Self {
             method,
@@ -53,34 +51,13 @@ impl RequestLine {
     }
 }
 
-fn split_lines_by_char(bytes: &[u8], splitter: u8) -> Vec<&[u8]> {
-    bytes
-        .split(|byte| *byte == splitter)
-        .collect()
-}
+
 
 
 #[derive(Debug)]
 pub struct HttpRequestHeader(String, String);
-macro_rules! create_enum_and_matchers {
-    ($enum_name:ident, $($enum_options:ident),*) => {
-        #[derive(Debug)]
-        pub enum $enum_name {
-            $($enum_options,)*
-        }
 
-        impl $enum_name {
-            pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-                match bytes {
-                    $(
-                        bytes if bytes == stringify!($enum_options).as_bytes() => Some($enum_name::$enum_options),
-                    )*
-                    _ => None
-                }
-            }
-        }
-    };
-}
 
 create_enum_and_matchers!(HttpMethod, GET, POST, PUT, DELETE, OPTION, HEAD);
+
 
