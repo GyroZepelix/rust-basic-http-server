@@ -3,6 +3,7 @@ mod http_server;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::ops::Deref;
+use crate::http_server::http_path::ToPathString;
 use crate::http_server::http_request::HttpRequest;
 use crate::http_server::http_response::{HttpResponse, HttpStatusCode};
 
@@ -41,14 +42,13 @@ fn handle_requests(request: &HttpRequest) -> HttpResponse {
         .add_header(("Content-Type", "text/plain"))
         .status_code(HttpStatusCode::Ok);
 
+
+
     match path_segments.get(0) {
         None => HttpStatusCode::Ok.into(),
-        Some(path_segment) => match path_segment.deref() {
+        Some(path_segment) => match path_segment.0.deref() {
             "secret" => HttpStatusCode::Forbidden.into(),
-            "echo" => match path_segments.get(1) {
-                None => HttpStatusCode::NotFound.into(),
-                Some(var) => echo_response.body(var).build()
-            }
+            "echo" => echo_response.body(&path_segments[1..].to_path_string()).build(),
             _ => HttpStatusCode::NotFound.into()
         }
     }
