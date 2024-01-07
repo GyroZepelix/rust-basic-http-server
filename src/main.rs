@@ -2,6 +2,7 @@ mod http_server;
 
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use std::ops::Deref;
 use crate::http_server::http_request::HttpRequest;
 use crate::http_server::http_response::{HttpResponse, HttpStatusCode};
 
@@ -33,8 +34,28 @@ fn main() {
 }
 
 fn handle_requests(request: &HttpRequest) -> HttpResponse {
-    match request.request_line.path.as_str() {
-        "/" => HttpStatusCode::Ok.into(),
-        _ => HttpStatusCode::NotFound.into()
+
+    let path_segments = &request.request_line.path.path_segments;
+
+    let echo_response = HttpResponse::builder()
+        .add_header(("Content-Type", "text/plain"))
+        .status_code(HttpStatusCode::Ok);
+
+    match path_segments.get(0) {
+        None => HttpStatusCode::Ok.into(),
+        Some(path_segment) => match path_segment.deref() {
+            "secret" => HttpStatusCode::Forbidden.into(),
+            "echo" => match path_segments.get(1) {
+                None => HttpStatusCode::NotFound.into(),
+                Some(var) => echo_response.body(var).build()
+            }
+            _ => HttpStatusCode::NotFound.into()
+        }
     }
+
+    // match request.request_line.path.as_str() {
+    //     "/" => HttpStatusCode::Ok.into(),
+    //     "/secret" => HttpStatusCode::Forbidden.into(),
+    //     _ => HttpStatusCode::NotFound.into()
+    // }
 }

@@ -1,18 +1,26 @@
+use std::collections::HashMap;
 use crate::create_enum_and_matchers;
 use crate::http_server::http_version::HttpVersion;
 
+pub type HttpResponseHeader = HashMap<String, String>;
 
 #[derive(Default)]
 pub struct HttpResponse {
     pub status_code: HttpStatusCode,
-    pub http_version: HttpVersion
+    pub http_version: HttpVersion,
+    pub headers: HttpResponseHeader,
+    pub body: Option<String>
 }
 
 #[derive(Default)]
 pub struct HttpResponseBuilder {
     status_code: HttpStatusCode,
-    http_version: HttpVersion
+    http_version: HttpVersion,
+    headers: HttpResponseHeader,
+    body: Option<String>,
 }
+
+
 
 impl HttpResponseBuilder {
 
@@ -26,18 +34,26 @@ impl HttpResponseBuilder {
         return self
     }
 
-    pub fn headers(mut self, headers: Vec<String>) -> Self {
+    pub fn add_headers(self, headers: Vec<(String, String)>) -> Self {
         todo!()
     }
 
-    pub fn add_header(mut self, header: String) -> Self {
-        todo!()
+    pub fn add_header(mut self, header: (&str, &str)) -> Self {
+        self.headers.insert(header.0.to_owned(), header.1.to_owned());
+        return self
+    }
+
+    pub fn body(mut self, body: &str) -> Self {
+        self.body = Some(body.to_owned());
+        self.add_header(("Content-Length", &body.len().to_string()))
     }
 
     pub fn build(self) -> HttpResponse{
         HttpResponse{
             status_code: self.status_code,
-            http_version: self.http_version
+            http_version: self.http_version,
+            headers: self.headers,
+            body: self.body,
         }
     }
 }
@@ -47,6 +63,8 @@ impl HttpResponse {
         HttpResponse {
             status_code,
             http_version,
+            headers: Default::default(),
+            body: None,
         }
     }
     
@@ -55,7 +73,23 @@ impl HttpResponse {
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        format!("{} {} {} \r\n\r\n", self.http_version, self.status_code.to_int(), self.status_code.to_string()).as_bytes().to_vec()
+        self.to_string().as_bytes().to_vec()
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut constructed_string = String::new();
+
+        let response_signature = format!("{} {} {} \r\n", self.http_version, self.status_code.to_int(), self.status_code.to_string());
+        let mut response_headers = String::new();
+        self.headers.iter()
+            .for_each(|(key, value)| response_headers.push_str(&format!("{}: {}\r\n", key, value)));
+        let response_body = format!("\r\n{}", self.body.clone().unwrap_or_default());
+
+        constructed_string.push_str(&response_signature);
+        constructed_string.push_str(&response_headers);
+        constructed_string.push_str(&response_body);
+
+        constructed_string
     }
 }
 
@@ -67,6 +101,7 @@ impl From<HttpStatusCode> for HttpResponse {
         }
     }
 }
+
 
 create_enum_and_matchers!(
     HttpStatusCode,

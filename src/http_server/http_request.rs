@@ -1,18 +1,22 @@
+use std::collections::HashMap;
 use crate::create_enum_and_matchers;
 use crate::http_server::helper::split_lines_by_char;
+use crate::http_server::http_path::HttpPath;
 use crate::http_server::http_version::HttpVersion;
 use crate::http_server::HttpServerError;
+
+pub type HttpRequestHeader = HashMap<String, String>;
 
 #[derive(Debug)]
 pub struct HttpRequest {
     pub request_line: RequestLine,
-    pub headers: Option<Vec<HttpRequestHeader>>
+    pub headers: Option<HttpRequestHeader>
 }
 
 #[derive(Debug)]
 pub struct RequestLine {
     pub method: HttpMethod,
-    pub path: String,
+    pub path: HttpPath,
     pub http_version: HttpVersion
 }
 
@@ -40,7 +44,7 @@ impl RequestLine {
         if request_line_bytes.len() != 3 { return Err(HttpServerError::InvalidRequestLineSyntax) };
 
         let method = HttpMethod::from_bytes(request_line_bytes[0]).ok_or(HttpServerError::HttpMethodNotFound)?;
-        let path = String::from_utf8_lossy(request_line_bytes[1]).to_string();
+        let path = String::from_utf8_lossy(request_line_bytes[1]).to_string().into();
         let http_version = HttpVersion::from_bytes(request_line_bytes[2])?;
 
         Ok(Self {
@@ -50,12 +54,6 @@ impl RequestLine {
         })
     }
 }
-
-
-
-
-#[derive(Debug)]
-pub struct HttpRequestHeader(String, String);
 
 
 create_enum_and_matchers!(HttpMethod, GET, POST, PUT, DELETE, OPTION, HEAD);

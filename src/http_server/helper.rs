@@ -7,6 +7,7 @@ pub fn split_lines_by_char(bytes: &[u8], splitter: u8) -> Vec<&[u8]> {
 #[macro_export]
 macro_rules! create_enum_and_matchers {
     ($enum_name:ident, $($enum_options:ident),*) => {
+        #[allow(dead_code)]
         #[derive(Debug, Default)]
         pub enum $enum_name {
             #[default]
@@ -14,6 +15,7 @@ macro_rules! create_enum_and_matchers {
         }
 
         impl $enum_name {
+            #[allow(dead_code)]
             pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
                 match bytes {
                     $(
@@ -25,6 +27,7 @@ macro_rules! create_enum_and_matchers {
         }
 
         impl ToString for $enum_name {
+            #[allow(dead_code)]
             fn to_string(&self) -> String {
                 match self {
                     $(
@@ -36,6 +39,7 @@ macro_rules! create_enum_and_matchers {
     };
 
     ($enum_name:ident, $($enum_options:ident, $enum_values:expr, $enum_str:expr),*) => {
+        #[allow(dead_code)]
         #[derive(Debug, Default)]
         pub enum $enum_name {
             #[default]
@@ -43,6 +47,7 @@ macro_rules! create_enum_and_matchers {
         }
 
         impl $enum_name {
+            #[allow(dead_code)]
             pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
                 match bytes {
                     $(
@@ -52,6 +57,7 @@ macro_rules! create_enum_and_matchers {
                 }
             }
 
+            #[allow(dead_code)]
             pub fn from_int(value: u32) -> Option<Self> {
                 match value {
                     $(
@@ -61,6 +67,7 @@ macro_rules! create_enum_and_matchers {
                 }
             }
 
+            #[allow(dead_code)]
             pub fn to_int(&self) -> u32 {
                 match self {
                     $(

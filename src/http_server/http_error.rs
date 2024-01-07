@@ -3,5 +3,5 @@ pub enum HttpServerError {
     InvalidHttpRequestStructure,
     InvalidRequestLineSyntax,
     HttpMethodNotFound,
-    InvalidHttpVersionFormat
+    InvalidHttpVersionFormat,
 }

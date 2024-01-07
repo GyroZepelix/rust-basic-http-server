@@ -5,4 +5,5 @@ pub mod http_response;
 mod helper;
 pub mod http_error;
 pub mod http_version;
+mod http_path;
 
