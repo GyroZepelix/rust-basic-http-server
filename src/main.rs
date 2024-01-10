@@ -37,18 +37,23 @@ fn main() {
 fn handle_requests(request: &HttpRequest) -> HttpResponse {
 
     let path_segments = &request.request_line.path.path_segments;
+    let headers = &request.headers;
 
-    let echo_response = HttpResponse::builder()
+    let echo_response_builder = HttpResponse::builder()
         .add_header(("Content-Type", "text/plain"))
         .status_code(HttpStatusCode::Ok);
 
+    let user_agent_response_builder = HttpResponse::builder()
+        .add_header(("Content-Type", "text/plain"))
+        .status_code(HttpStatusCode::Ok);
 
 
     match path_segments.get(0) {
         None => HttpStatusCode::Ok.into(),
         Some(path_segment) => match path_segment.0.deref() {
             "secret" => HttpStatusCode::Forbidden.into(),
-            "echo" => echo_response.body(&path_segments[1..].to_path_string()).build(),
+            "echo" => echo_response_builder.body(&path_segments[1..].to_path_string()).build(),
+            "user-agent" => user_agent_response_builder.body(headers.get("User-Agent").unwrap_or("")).build(),
             _ => HttpStatusCode::NotFound.into()
         }
     }

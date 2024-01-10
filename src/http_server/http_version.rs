@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use crate::http_server::helper::split_lines_by_char;
+use crate::http_server::helper::{split_lines_by_byte};
 use crate::http_server::http_error::HttpServerError;
 use crate::http_server::http_error::HttpServerError::InvalidHttpVersionFormat;
 
@@ -23,10 +23,10 @@ impl HttpVersion {
         }
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, HttpServerError> {
-        let name_and_version = split_lines_by_char(bytes, BACKSLASH);
+        let name_and_version = split_lines_by_byte(bytes, BACKSLASH);
         if name_and_version.len() != 2 { return Err(InvalidHttpVersionFormat) }
 
-        let version_split = split_lines_by_char(name_and_version[1], DOT);
+        let version_split = split_lines_by_byte(name_and_version[1], DOT);
         if version_split.len() != 2 { return Err(InvalidHttpVersionFormat) }
 
         let name = String::from_utf8_lossy(name_and_version[0]).to_string();

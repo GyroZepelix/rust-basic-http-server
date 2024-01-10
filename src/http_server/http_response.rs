@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use crate::create_enum_and_matchers;
 use crate::http_server::http_version::HttpVersion;
 
-pub type HttpResponseHeader = HashMap<String, String>;
+#[derive(Default)]
+pub struct HttpResponseHeader(HashMap<String, String>);
 
 #[derive(Default)]
 pub struct HttpResponse {
@@ -39,7 +40,7 @@ impl HttpResponseBuilder {
     }
 
     pub fn add_header(mut self, header: (&str, &str)) -> Self {
-        self.headers.insert(header.0.to_owned(), header.1.to_owned());
+        self.headers.0.insert(header.0.to_owned(), header.1.to_owned());
         return self
     }
 
@@ -81,7 +82,7 @@ impl HttpResponse {
 
         let response_signature = format!("{} {} {} \r\n", self.http_version, self.status_code.to_int(), self.status_code.to_string());
         let mut response_headers = String::new();
-        self.headers.iter()
+        self.headers.0.iter()
             .for_each(|(key, value)| response_headers.push_str(&format!("{}: {}\r\n", key, value)));
         let response_body = format!("\r\n{}", self.body.clone().unwrap_or_default());
 

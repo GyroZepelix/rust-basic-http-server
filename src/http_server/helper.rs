@@ -1,7 +1,23 @@
-pub fn split_lines_by_char(bytes: &[u8], splitter: u8) -> Vec<&[u8]> {
-    bytes
-        .split(|byte| *byte == splitter)
-        .collect()
+use itertools::Itertools;
+
+pub fn split_lines_by_byte(bytes: &[u8], splitter: u8) -> Vec<&[u8]> {
+    bytes.split(|byte| *byte == splitter).collect()
+}
+
+pub fn split_lines_by_bytes<'a>(bytes: &'a[u8], splitter: &[u8]) -> Vec<&'a[u8]> {
+    let splitter_positions: Vec<usize> = bytes.windows(splitter.len())
+        .positions(|window| window == splitter)
+        .collect();
+
+    let mut start = 0;
+    let mut split_slices = Vec::new();
+
+    for pos in splitter_positions {
+        let byteslice_split = &bytes[start..pos];
+        start = pos+2;
+        split_slices.push(byteslice_split)
+    };
+    split_slices
 }
 
 #[macro_export]
