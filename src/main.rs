@@ -10,7 +10,7 @@ use crate::http_server::http_response::{HttpResponse, HttpStatusCode};
 use crate::http_server::lib::{HttpServer, RouteHandle};
 
 fn main() {
-    env_logger::init();
+    //env_logger::init();
 
     let http_server = HttpServer::builder()
         .listener("127.0.0.1:4221")
