@@ -14,8 +14,10 @@ fn main() {
 
     let http_server = HttpServer::builder()
         .listener("127.0.0.1:4221")
+        .add_route(RouteHandle::new(GET, "/", |req, var| HttpStatusCode::Ok.into()))
         .add_route(RouteHandle::new(GET, "/secret", |req, var| HttpStatusCode::Forbidden.into()))
         .add_route(RouteHandle::new(GET, "/echo/{to_echo}", echo))
+        .add_route(RouteHandle::new(GET, "/echo/{to_echo}/{to_echo_two}", echo_two))
         .add_route(RouteHandle::new(GET, "/user-agent", user_agent))
         .build();
 
@@ -34,6 +36,19 @@ fn echo(request: &HttpRequest, path_variables: &HashMap<String, String>) -> Http
         .add_header(("Content-Type", "text/plain"))
         .status_code(HttpStatusCode::Ok)
         .body(&to_echo)
+        .build()
+}
+
+fn echo_two(request: &HttpRequest, path_variables: &HashMap<String, String>) -> HttpResponse {
+    let to_echo = path_variables.get("to_echo")
+        .map_or("".to_string(), |var| var.to_string());
+    let to_echo_two = path_variables.get("to_echo_two")
+        .map_or("".to_string(), |var| var.to_string());
+
+    HttpResponse::builder()
+        .add_header(("Content-Type", "text/plain"))
+        .status_code(HttpStatusCode::Ok)
+        .body(&format!("{}/{}", to_echo, to_echo_two))
         .build()
 }
 
