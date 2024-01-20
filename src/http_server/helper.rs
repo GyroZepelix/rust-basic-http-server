@@ -24,7 +24,7 @@ pub fn split_lines_by_bytes<'a>(bytes: &'a[u8], splitter: &[u8]) -> Vec<&'a[u8]>
 macro_rules! create_enum_and_matchers {
     ($enum_name:ident, $($enum_options:ident),*) => {
         #[allow(dead_code)]
-        #[derive(Debug, Default)]
+        #[derive(Debug, Default, PartialEq)]
         pub enum $enum_name {
             #[default]
             $($enum_options,)*
@@ -56,7 +56,7 @@ macro_rules! create_enum_and_matchers {
 
     ($enum_name:ident, $($enum_options:ident, $enum_values:expr, $enum_str:expr),*) => {
         #[allow(dead_code)]
-        #[derive(Debug, Default)]
+        #[derive(Debug, Default, PartialEq)]
         pub enum $enum_name {
             #[default]
             $($enum_options,)*

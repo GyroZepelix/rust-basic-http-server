@@ -4,6 +4,7 @@ use crate::http_server::helper::{split_lines_by_byte, split_lines_by_bytes};
 use crate::http_server::http_path::HttpPath;
 use crate::http_server::http_version::HttpVersion;
 use crate::http_server::HttpServerError;
+use crate::http_server::http_error::Result;
 
 #[derive(Debug)]
 pub struct HttpRequestHeader(HashMap<String, String>);
@@ -30,7 +31,7 @@ const COLON: u8 = b':';
 impl HttpRequest {
 
     /// Takes in the bytes received from a TcpStream and trys to convert them into a HttpRequest
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, HttpServerError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let split_lines = split_lines_by_bytes(bytes, &[CARRIAGE_RETURN, NEWLINE]);
         let http_lines = split_lines.len();
         let request_line = RequestLine::from_bytes(split_lines.first().ok_or(HttpServerError::InvalidRequestLineSyntax)?)?;
@@ -54,7 +55,7 @@ impl HttpRequestHeader {
 
 impl RequestLine {
     /// Takes in a slice of bytes and converts them into a RequestLine
-    pub fn from_bytes(line_bytes: &[u8]) -> Result<Self, HttpServerError> {
+    pub fn from_bytes(line_bytes: &[u8]) -> Result<Self> {
         let request_line_bytes: Vec<&[u8]> = split_lines_by_byte(line_bytes, EMPTY_LINE);
 
         if request_line_bytes.len() != 3 { return Err(HttpServerError::InvalidRequestLineSyntax) };

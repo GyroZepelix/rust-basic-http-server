@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use crate::http_server::helper::{split_lines_by_byte};
-use crate::http_server::http_error::HttpServerError;
+use crate::http_server::http_error::Result;
 use crate::http_server::http_error::HttpServerError::InvalidHttpVersionFormat;
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl HttpVersion {
             minor
         }
     }
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, HttpServerError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let name_and_version = split_lines_by_byte(bytes, BACKSLASH);
         if name_and_version.len() != 2 { return Err(InvalidHttpVersionFormat) }
 

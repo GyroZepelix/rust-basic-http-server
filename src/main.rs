@@ -1,66 +1,48 @@
 mod http_server;
 
+use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::net::TcpListener;
 use std::ops::Deref;
 use crate::http_server::http_path::ToPathString;
+use crate::http_server::http_request::HttpMethod::GET;
 use crate::http_server::http_request::HttpRequest;
 use crate::http_server::http_response::{HttpResponse, HttpStatusCode};
+use crate::http_server::lib::{HttpServer, RouteHandle};
 
 fn main() {
-    println!("Logs from your program will appear here!");
+    env_logger::init();
 
-    let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
+    let http_server = HttpServer::builder()
+        .listener("127.0.0.1:4221")
+        .add_route(RouteHandle::new(GET, "/secret", |req, var| HttpStatusCode::Forbidden.into()))
+        .add_route(RouteHandle::new(GET, "/echo/{to_echo}", echo))
+        .add_route(RouteHandle::new(GET, "/user-agent", user_agent))
+        .build();
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(mut stream) => {
-                println!("accepted new connection");
-                let mut buffer = [0; 128];
-                stream.read(&mut buffer).unwrap();
-                println!("response in bytes: {:?}", buffer);
-                println!("response: {:?}", String::from_utf8_lossy(&buffer));
-                let http_request = HttpRequest::from_bytes(&buffer).expect("Incoming message should have correct syntax");
-                dbg!(&http_request);
+    http_server
+        .run()
+        .join()
+        .unwrap();
 
-                let http_response = handle_requests(&http_request);
-
-                stream.write(http_response.to_bytes().as_slice()).unwrap();
-            }
-            Err(e) => {
-                println!("error: {}", e);
-            }
-        }
-    }
 }
 
-fn handle_requests(request: &HttpRequest) -> HttpResponse {
+fn echo(request: &HttpRequest, path_variables: &HashMap<String, String>) -> HttpResponse {
+    let to_echo = path_variables.get("to_echo")
+        .map_or("".to_string(), |var| var.to_string());
 
-    let path_segments = &request.request_line.path.path_segments;
-    let headers = &request.headers;
-
-    let echo_response_builder = HttpResponse::builder()
+    HttpResponse::builder()
         .add_header(("Content-Type", "text/plain"))
-        .status_code(HttpStatusCode::Ok);
+        .status_code(HttpStatusCode::Ok)
+        .body(&to_echo)
+        .build()
+}
 
-    let user_agent_response_builder = HttpResponse::builder()
+fn user_agent(request: &HttpRequest, path_variables: &HashMap<String, String>) -> HttpResponse {
+    let user_agent_header = request.headers.get("User-Agent").unwrap_or("");
+
+    HttpResponse::builder()
         .add_header(("Content-Type", "text/plain"))
-        .status_code(HttpStatusCode::Ok);
-
-
-    match path_segments.get(0) {
-        None => HttpStatusCode::Ok.into(),
-        Some(path_segment) => match path_segment.0.deref() {
-            "secret" => HttpStatusCode::Forbidden.into(),
-            "echo" => echo_response_builder.body(&path_segments[1..].to_path_string()).build(),
-            "user-agent" => user_agent_response_builder.body(headers.get("User-Agent").unwrap_or("")).build(),
-            _ => HttpStatusCode::NotFound.into()
-        }
-    }
-
-    // match request.request_line.path.as_str() {
-    //     "/" => HttpStatusCode::Ok.into(),
-    //     "/secret" => HttpStatusCode::Forbidden.into(),
-    //     _ => HttpStatusCode::NotFound.into()
-    // }
+        .status_code(HttpStatusCode::Ok)
+        .body(user_agent_header)
+        .build()
 }

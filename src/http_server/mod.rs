@@ -6,4 +6,5 @@ mod helper;
 pub mod http_error;
 pub mod http_version;
 pub mod http_path;
+pub mod lib;
 
