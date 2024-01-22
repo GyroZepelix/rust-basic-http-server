@@ -9,7 +9,7 @@ use log::{debug, error, info, trace};
 use crate::http_server::http_request::{HttpMethod, HttpRequest};
 use crate::http_server::http_response::HttpResponse;
 use crate::http_server::http_error::Result;
-use crate::http_server::http_path::{HttpPath, HttpPathSegment, PathCompareResult, RouteMappingPath};
+use crate::http_server::http_path::{PathCompareResult, RouteMappingPath};
 use crate::http_server::http_path::PathCompareResult::NotMatching;
 use crate::http_server::http_response::HttpStatusCode::NotFound;
 
@@ -27,15 +27,28 @@ pub struct HttpServerBuilder {
 pub struct RouteHandle {
     pub method: HttpMethod,
     pub route: RouteMappingPath,
-    pub function: Box<dyn Fn(&HttpRequest, &HashMap<String, String>) -> HttpResponse + Send + Sync>
+    pub function: Box<dyn Fn(&RequestContext) -> HttpResponse + Send + Sync>
 }
 
+pub struct RequestContext<'a> {
+    pub http_request: &'a HttpRequest,
+    pub path_variables: HashMap<String, String>
+}
 struct RequestHandler {
     route_handles: Vec<RouteHandle>
 }
 
+impl RequestContext<'_> {
+    pub fn new(http_request: &HttpRequest, path_variables: HashMap<String, String>) -> RequestContext {
+        Self {
+            http_request,
+            path_variables
+        }
+    }
+}
+
 impl RouteHandle {
-    pub fn new<F: Fn(&HttpRequest, &HashMap<String, String>) -> HttpResponse + 'static + Send + Sync>(method: HttpMethod, route: &str, function: F) -> Self {
+    pub fn new<F: Fn(&RequestContext) -> HttpResponse + 'static + Send + Sync>(method: HttpMethod, route: &str, function: F) -> Self {
         RouteHandle {
             method,
             route: route.into(),
@@ -140,8 +153,10 @@ impl RequestHandler {
                 }
             });
 
+
+        // Run the endpoint function
         match found_route {
-            Some((route, variables_map)) => (route.function)(http_request, &variables_map),
+            Some((route, variables_map)) => (route.function)(&RequestContext::new(http_request, variables_map)),
             None => NotFound.into()
         }
     }
