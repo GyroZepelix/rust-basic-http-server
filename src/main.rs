@@ -1,16 +1,20 @@
 mod http_server;
 
-use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::ops::Deref;
+use std::sync::{Arc, Mutex};
 use crate::http_server::http_path::ToPathString;
-use crate::http_server::http_request::HttpMethod::GET;
-use crate::http_server::http_request::HttpRequest;
+use crate::http_server::http_request::HttpMethod::{GET, POST};
 use crate::http_server::http_response::{HttpResponse, HttpStatusCode};
 use crate::http_server::lib::{HttpServer, RequestContext, RouteHandle};
 
 fn main() {
-    //env_logger::init();
+    env_logger::init();
+
+    let data: Arc<Mutex<i32>> = Arc::new(Mutex::new(0));
+
+    let data2 = data.clone();
+    let data3 = data.clone();
 
     let http_server = HttpServer::builder()
         .listener("127.0.0.1:4221")
@@ -19,6 +23,8 @@ fn main() {
         .add_route(RouteHandle::new(GET, "/echo/{to_echo}", echo))
         .add_route(RouteHandle::new(GET, "/echo/{to_echo}/{to_echo_two}", echo_two))
         .add_route(RouteHandle::new(GET, "/user-agent", user_agent))
+        .add_route(RouteHandle::new(POST, "/data/{number}", move |cx| post_data(cx, data2.clone())))
+        .add_route(RouteHandle::new(GET, "/data", move |cx| get_data(cx, data3.clone())))
         .build();
 
     http_server
@@ -59,5 +65,31 @@ fn user_agent(cx: &RequestContext) -> HttpResponse {
         .add_header(("Content-Type", "text/plain"))
         .status_code(HttpStatusCode::Ok)
         .body(user_agent_header)
+        .build()
+}
+
+fn post_data(cx: &RequestContext, data: Arc<Mutex<i32>>) -> HttpResponse {
+
+    let number = cx.path_variables.get("number")
+        .map_or(None, |number_str| number_str.parse::<i32>().ok());
+
+    match number {
+        None => {HttpStatusCode::BadRequest.into()}
+        Some(number) => {
+            let mut data = data.lock().unwrap();
+            *data = number;
+            HttpStatusCode::Accepted.into()
+        }
+    }
+}
+
+fn get_data(cx: &RequestContext, data: Arc<Mutex<i32>>) -> HttpResponse {
+
+    let data = *data.lock().unwrap();
+
+    HttpResponse::builder()
+        .status_code(HttpStatusCode::Ok)
+        .add_header(("Content-Type", "application/json"))
+        .body(&format!("{{data:{}}}", data))
         .build()
 }

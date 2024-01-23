@@ -38,8 +38,8 @@ struct RequestHandler {
     route_handles: Vec<RouteHandle>
 }
 
-impl RequestContext<'_> {
-    pub fn new(http_request: &HttpRequest, path_variables: HashMap<String, String>) -> RequestContext {
+impl<'a> RequestContext<'a> {
+    pub fn new(http_request: &'a HttpRequest, path_variables: HashMap<String, String>) -> RequestContext<'a> {
         Self {
             http_request,
             path_variables
